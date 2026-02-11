@@ -12,7 +12,8 @@ export async function GET() {
     const testList = await db.select().from(testimonials).where(eq(testimonials.isActive, true));
     const qbConnected = await isConnected();
     return NextResponse.json({ settings: allSettings, services: svcList, testimonials: testList, qbConnected });
-  } catch {
+  } catch (error) {
+    console.error('GET /api/settings: Failed to load settings:', error);
     return NextResponse.json({ settings: {}, services: [], testimonials: [], qbConnected: false });
   }
 }
@@ -35,7 +36,8 @@ export async function POST(req: Request) {
       }
     }
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error('POST /api/settings: Failed to save settings:', error);
     return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
   }
 }

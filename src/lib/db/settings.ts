@@ -24,6 +24,7 @@ export type BusinessSettings = {
   socialInstagram: string;
   socialTwitter: string;
   socialLinkedin: string;
+  faviconUrl: string;
   qbClientId: string;
   qbClientSecret: string;
   qbRedirectUri: string;
@@ -52,6 +53,7 @@ const defaults: BusinessSettings = {
   socialInstagram: '',
   socialTwitter: '',
   socialLinkedin: '',
+  faviconUrl: '',
   qbClientId: '',
   qbClientSecret: '',
   qbRedirectUri: '',
@@ -62,7 +64,8 @@ export async function getSetting(key: string): Promise<string> {
   try {
     const result = await db.select().from(settings).where(eq(settings.key, key)).limit(1);
     return result[0]?.value ?? defaults[key as keyof BusinessSettings] ?? '';
-  } catch {
+  } catch (error) {
+    console.error(`getSetting('${key}'): DB read failed:`, error);
     return defaults[key as keyof BusinessSettings] ?? '';
   }
 }
@@ -75,7 +78,8 @@ export async function getAllSettings(): Promise<BusinessSettings> {
       if (row.value !== null) map[row.key] = row.value;
     }
     return { ...defaults, ...map } as BusinessSettings;
-  } catch {
+  } catch (error) {
+    console.error('getAllSettings: DB read failed:', error);
     return { ...defaults };
   }
 }
