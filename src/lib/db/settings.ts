@@ -24,6 +24,10 @@ export type BusinessSettings = {
   socialInstagram: string;
   socialTwitter: string;
   socialLinkedin: string;
+  qbClientId: string;
+  qbClientSecret: string;
+  qbRedirectUri: string;
+  qbEnvironment: string;
 };
 
 const defaults: BusinessSettings = {
@@ -48,6 +52,10 @@ const defaults: BusinessSettings = {
   socialInstagram: '',
   socialTwitter: '',
   socialLinkedin: '',
+  qbClientId: '',
+  qbClientSecret: '',
+  qbRedirectUri: '',
+  qbEnvironment: '',
 };
 
 export async function getSetting(key: string): Promise<string> {

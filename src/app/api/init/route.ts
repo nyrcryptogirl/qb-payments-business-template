@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { neon } from '@neondatabase/serverless';
 
 export async function GET() {
   try {
+    const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL!);
+
     // Create all tables if they don't exist
     await sql`
       CREATE TABLE IF NOT EXISTS users (
