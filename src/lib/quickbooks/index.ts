@@ -1,29 +1,50 @@
 import { db } from '@/lib/db';
 import { qbTokens } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-
-const QB_CLIENT_ID = process.env.QB_CLIENT_ID!;
-const QB_CLIENT_SECRET = process.env.QB_CLIENT_SECRET!;
-const QB_REDIRECT_URI = process.env.QB_REDIRECT_URI!;
-const QB_ENVIRONMENT = process.env.QB_ENVIRONMENT || 'sandbox'; // sandbox | production
+import { getAllSettings } from '@/lib/db/settings';
 
 const QB_AUTH_URL = 'https://appcenter.intuit.com/connect/oauth2';
 const QB_TOKEN_URL = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
 
-const QB_BASE_URL = QB_ENVIRONMENT === 'production'
-  ? 'https://quickbooks.api.intuit.com'
-  : 'https://sandbox-quickbooks.api.intuit.com';
+// Get QB config from DB settings first, then fall back to env vars
+async function getQBConfig() {
+  try {
+    const settings = await getAllSettings();
+    return {
+      clientId: settings.qbClientId || process.env.QB_CLIENT_ID || '',
+      clientSecret: settings.qbClientSecret || process.env.QB_CLIENT_SECRET || '',
+      redirectUri: settings.qbRedirectUri || process.env.QB_REDIRECT_URI || '',
+      environment: settings.qbEnvironment || process.env.QB_ENVIRONMENT || 'sandbox',
+    };
+  } catch {
+    return {
+      clientId: process.env.QB_CLIENT_ID || '',
+      clientSecret: process.env.QB_CLIENT_SECRET || '',
+      redirectUri: process.env.QB_REDIRECT_URI || '',
+      environment: process.env.QB_ENVIRONMENT || 'sandbox',
+    };
+  }
+}
 
-const QB_PAYMENTS_URL = QB_ENVIRONMENT === 'production'
-  ? 'https://api.intuit.com/quickbooks/v4/payments'
-  : 'https://sandbox.api.intuit.com/quickbooks/v4/payments';
+function getBaseUrl(environment: string) {
+  return environment === 'production'
+    ? 'https://quickbooks.api.intuit.com'
+    : 'https://sandbox-quickbooks.api.intuit.com';
+}
+
+function getPaymentsUrl(environment: string) {
+  return environment === 'production'
+    ? 'https://api.intuit.com/quickbooks/v4/payments'
+    : 'https://sandbox.api.intuit.com/quickbooks/v4/payments';
+}
 
 // Generate OAuth authorization URL
-export function getAuthUrl(state: string): string {
+export async function getAuthUrl(state: string): Promise<string> {
+  const config = await getQBConfig();
   const params = new URLSearchParams({
-    client_id: QB_CLIENT_ID,
+    client_id: config.clientId,
     scope: 'com.intuit.quickbooks.accounting com.intuit.quickbooks.payment',
-    redirect_uri: QB_REDIRECT_URI,
+    redirect_uri: config.redirectUri,
     response_type: 'code',
     state,
   });
@@ -32,7 +53,8 @@ export function getAuthUrl(state: string): string {
 
 // Exchange authorization code for tokens
 export async function exchangeCodeForTokens(code: string) {
-  const basicAuth = Buffer.from(`${QB_CLIENT_ID}:${QB_CLIENT_SECRET}`).toString('base64');
+  const config = await getQBConfig();
+  const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
 
   const response = await fetch(QB_TOKEN_URL, {
     method: 'POST',
@@ -43,7 +65,7 @@ export async function exchangeCodeForTokens(code: string) {
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: QB_REDIRECT_URI,
+      redirect_uri: config.redirectUri,
     }),
   });
 
@@ -106,7 +128,8 @@ export async function getAccessToken(): Promise<{ token: string; realmId: string
     return null;
   }
 
-  const basicAuth = Buffer.from(`${QB_CLIENT_ID}:${QB_CLIENT_SECRET}`).toString('base64');
+  const config = await getQBConfig();
+  const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
 
   const response = await fetch(QB_TOKEN_URL, {
     method: 'POST',
@@ -143,7 +166,9 @@ export async function qbAccountingRequest(
   const auth = await getAccessToken();
   if (!auth) throw new Error('Not connected to QuickBooks');
 
-  const url = `${QB_BASE_URL}/v3/company/${auth.realmId}/${endpoint}`;
+  const config = await getQBConfig();
+  const baseUrl = getBaseUrl(config.environment);
+  const url = `${baseUrl}/v3/company/${auth.realmId}/${endpoint}`;
   const headers: Record<string, string> = {
     'Authorization': `Bearer ${auth.token}`,
     'Accept': 'application/json',
@@ -174,7 +199,9 @@ export async function qbPaymentsRequest(
   const auth = await getAccessToken();
   if (!auth) throw new Error('Not connected to QuickBooks');
 
-  const url = `${QB_PAYMENTS_URL}/${endpoint}`;
+  const config = await getQBConfig();
+  const paymentsUrl = getPaymentsUrl(config.environment);
+  const url = `${paymentsUrl}/${endpoint}`;
   const headers: Record<string, string> = {
     'Authorization': `Bearer ${auth.token}`,
     'Accept': 'application/json',
@@ -322,8 +349,8 @@ export async function chargeECheck(
 export async function disconnectFromQB() {
   const tokens = await db.select().from(qbTokens).limit(1);
   if (tokens.length > 0) {
-    // Revoke the token
-    const basicAuth = Buffer.from(`${QB_CLIENT_ID}:${QB_CLIENT_SECRET}`).toString('base64');
+    const config = await getQBConfig();
+    const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
     try {
       await fetch('https://developer.api.intuit.com/v2/oauth2/tokens/revoke', {
         method: 'POST',

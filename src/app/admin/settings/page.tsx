@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Loader2, Check, Link2, Unlink, Palette, Globe, CreditCard, MessageSquare, Plus, Trash2 } from 'lucide-react';
+import { Save, Loader2, Check, Link2, Unlink, Palette, Globe, CreditCard, MessageSquare, Plus, Trash2, Key, Info, AlertCircle } from 'lucide-react';
 
 interface Service { id?: number; name: string; description: string; price: string; priceType: string; isActive: boolean; }
 interface Testimonial { id?: number; name: string; role: string; content: string; rating: number; isActive: boolean; }
@@ -23,7 +23,12 @@ export default function SettingsPage() {
       const res = await fetch('/api/settings');
       if (res.ok) {
         const data = await res.json();
-        setS(data.settings || {});
+        const loadedSettings = data.settings || {};
+        // Auto-fill redirect URI if not set
+        if (!loadedSettings.qbRedirectUri && typeof window !== 'undefined') {
+          loadedSettings.qbRedirectUri = `${window.location.origin}/api/quickbooks/callback`;
+        }
+        setS(loadedSettings);
         setServicesList(data.services || []);
         setTestimonialsList(data.testimonials || []);
         setQbConnected(data.qbConnected || false);
@@ -153,20 +158,77 @@ export default function SettingsPage() {
       )}
 
       {tab === 'quickbooks' && (
-        <div className="card p-6 space-y-6">
-          <h3 className="font-bold text-lg">QuickBooks Connection</h3>
-          <p className="text-sm text-[var(--color-text-muted)]">Connect to enable payment processing. Payments deposit directly into your QuickBooks-linked bank account.</p>
-          {qbConnected ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-success)]/10 border border-[var(--color-success)]/30"><Link2 size={20} className="text-[var(--color-success)]" /><span className="font-medium text-[var(--color-success)]">Connected to QuickBooks</span></div>
-              <button onClick={async()=>{if(confirm('Disconnect?')){await fetch('/api/quickbooks/disconnect',{method:'POST'});setQbConnected(false);}}} className="btn-secondary text-[var(--color-error)] flex items-center gap-2"><Unlink size={16} /> Disconnect</button>
+        <div className="space-y-6">
+          <div className="card p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <Key size={20} />
+              <h3 className="font-bold text-lg">API Credentials</h3>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30"><Unlink size={20} className="text-[var(--color-warning)]" /><span className="text-sm">Not connected. Click below to authorize.</span></div>
-              <a href="/api/quickbooks/connect" className="btn-primary inline-flex items-center gap-2"><Link2 size={18} /> Connect to QuickBooks</a>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/30">
+              <Info size={16} className="text-[var(--color-primary)] flex-shrink-0" />
+              <p className="text-xs text-[var(--color-text-muted)]">These override environment variables if set. Get your credentials from the Intuit Developer portal.</p>
             </div>
-          )}
+            <div className="space-y-4">
+              <div><label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1.5">QB Client ID</label><input value={s.qbClientId||''} onChange={e=>updateS('qbClientId',e.target.value)} className="input font-mono text-sm" placeholder="e.g. AB0i1Gnf..." /></div>
+              <div><label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1.5">QB Client Secret</label><input type="password" value={s.qbClientSecret||''} onChange={e=>updateS('qbClientSecret',e.target.value)} className="input font-mono text-sm" placeholder="Enter your client secret" /></div>
+              <div><label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1.5">QB Redirect URI</label><input value={s.qbRedirectUri || (typeof window !== 'undefined' ? `${window.location.origin}/api/quickbooks/callback` : '')} onChange={e=>updateS('qbRedirectUri',e.target.value)} className="input font-mono text-sm" readOnly /></div>
+              <div><label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1.5">QB Environment</label>
+                <select value={s.qbEnvironment||'sandbox'} onChange={e=>updateS('qbEnvironment',e.target.value)} className="input">
+                  <option value="sandbox">Sandbox</option>
+                  <option value="production">Production</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-6 space-y-6">
+            <h3 className="font-bold text-lg">QuickBooks Connection</h3>
+            <p className="text-sm text-[var(--color-text-muted)]">Connect to enable payment processing. Payments deposit directly into your QuickBooks-linked bank account.</p>
+            {(!s.qbClientId && !s.qbClientSecret) && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30">
+                <AlertCircle size={18} className="text-[var(--color-warning)] flex-shrink-0" />
+                <p className="text-sm">Save your API Credentials above before connecting.</p>
+              </div>
+            )}
+            {qbConnected ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-success)]/10 border border-[var(--color-success)]/30"><Link2 size={20} className="text-[var(--color-success)]" /><span className="font-medium text-[var(--color-success)]">Connected to QuickBooks</span></div>
+                <button onClick={async()=>{if(confirm('Disconnect?')){await fetch('/api/quickbooks/disconnect',{method:'POST'});setQbConnected(false);}}} className="btn-secondary text-[var(--color-error)] flex items-center gap-2"><Unlink size={16} /> Disconnect</button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30"><Unlink size={20} className="text-[var(--color-warning)]" /><span className="text-sm">Not connected. Click below to authorize.</span></div>
+                <a href="/api/quickbooks/connect" className="btn-primary inline-flex items-center gap-2"><Link2 size={18} /> Connect to QuickBooks</a>
+              </div>
+            )}
+          </div>
+
+          <div className="card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Info size={20} />
+              <h3 className="font-bold text-lg">Intuit Developer Portal Settings</h3>
+            </div>
+            <p className="text-sm text-[var(--color-text-muted)]">You must configure these URLs in your Intuit Developer app settings for OAuth to work correctly.</p>
+            <div className="space-y-3 p-4 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)]">
+              <div>
+                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Redirect URIs</p>
+                <p className="text-sm font-mono mt-1">{typeof window !== 'undefined' ? `${window.location.origin}/api/quickbooks/callback` : '/api/quickbooks/callback'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Host Domain</p>
+                <p className="text-sm font-mono mt-1">{typeof window !== 'undefined' ? window.location.hostname : 'your-domain.com'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Launch URL</p>
+                <p className="text-sm font-mono mt-1">{typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Disconnect URL</p>
+                <p className="text-sm font-mono mt-1">{typeof window !== 'undefined' ? `${window.location.origin}/api/quickbooks/disconnect` : '/api/quickbooks/disconnect'}</p>
+              </div>
+            </div>
+            <p className="text-xs text-[var(--color-text-muted)]">Copy these values into your Intuit Developer app at developer.intuit.com under Keys &amp; credentials.</p>
+          </div>
         </div>
       )}
     </div>

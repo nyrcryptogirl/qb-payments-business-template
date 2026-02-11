@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [checkingSetup, setCheckingSetup] = useState(true);
   const [dbReady, setDbReady] = useState(true);
   const [initializingDb, setInitializingDb] = useState(false);
+  const [hasAdmin, setHasAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
     checkSetup();
@@ -25,6 +26,19 @@ export default function LoginPage() {
       const res = await fetch('/api/settings');
       if (res.ok) {
         setDbReady(true);
+        // Check if admin exists
+        try {
+          const checkRes = await fetch('/api/auth/check');
+          if (checkRes.ok) {
+            const data = await checkRes.json();
+            setHasAdmin(data.hasAdmin);
+            if (!data.hasAdmin) {
+              setMode('register');
+            }
+          }
+        } catch {
+          setHasAdmin(null);
+        }
         setCheckingSetup(false);
       } else {
         // DB might not be initialized
@@ -43,6 +57,7 @@ export default function LoginPage() {
       const res = await fetch('/api/init');
       if (res.ok) {
         setDbReady(true);
+        setHasAdmin(false);
         setMode('register');
       } else {
         const data = await res.json();
@@ -143,13 +158,15 @@ export default function LoginPage() {
                 {loading ? 'Please wait...' : mode === 'register' ? 'Create Account' : 'Sign In'}
               </button>
             </form>
-            <p className="text-center text-sm text-[var(--color-text-muted)] mt-4">
-              {mode === 'login' ? (
-                <>First time? <button onClick={() => setMode('register')} className="text-[var(--color-primary)] font-medium hover:underline">Create admin account</button></>
-              ) : (
-                <>Already set up? <button onClick={() => setMode('login')} className="text-[var(--color-primary)] font-medium hover:underline">Sign in</button></>
-              )}
-            </p>
+            {hasAdmin === false && (
+              <p className="text-center text-sm text-[var(--color-text-muted)] mt-4">
+                {mode === 'login' ? (
+                  <>First time? <button onClick={() => setMode('register')} className="text-[var(--color-primary)] font-medium hover:underline">Create admin account</button></>
+                ) : (
+                  <>Already set up? <button onClick={() => setMode('login')} className="text-[var(--color-primary)] font-medium hover:underline">Sign in</button></>
+                )}
+              </p>
+            )}
           </>
         )}
       </div>
