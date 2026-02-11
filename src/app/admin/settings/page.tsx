@@ -226,6 +226,14 @@ export default function SettingsPage() {
                 <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Disconnect URL</p>
                 <p className="text-sm font-mono mt-1">{typeof window !== 'undefined' ? `${window.location.origin}/api/quickbooks/disconnect` : '/api/quickbooks/disconnect'}</p>
               </div>
+              <div>
+                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">End-User License Agreement URL</p>
+                <p className="text-sm font-mono mt-1">{typeof window !== 'undefined' ? `${window.location.origin}/terms` : '/terms'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide">Privacy Policy URL</p>
+                <p className="text-sm font-mono mt-1">{typeof window !== 'undefined' ? `${window.location.origin}/privacy` : '/privacy'}</p>
+              </div>
             </div>
             <p className="text-xs text-[var(--color-text-muted)]">Copy these values into your Intuit Developer app at developer.intuit.com under Keys &amp; credentials.</p>
           </div>

@@ -55,7 +55,7 @@ const defaults: BusinessSettings = {
   qbClientId: '',
   qbClientSecret: '',
   qbRedirectUri: '',
-  qbEnvironment: '',
+  qbEnvironment: 'production',
 };
 
 export async function getSetting(key: string): Promise<string> {

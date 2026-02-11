@@ -97,6 +97,12 @@ export default async function CheckoutPage() {
           <Shield size={14} className="text-[var(--color-success)]" />
           Your payment info is encrypted and tokenized. We never store card or bank details.
         </div>
+
+        <div className="mt-4 text-center text-xs text-[var(--color-text-muted)]">
+          <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+          <span className="mx-2">·</span>
+          <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+        </div>
       </div>
     </div>
   );
