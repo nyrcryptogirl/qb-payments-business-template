@@ -93,7 +93,14 @@ export default function SettingsPage() {
             <h3 className="font-bold text-lg">Logo</h3>
             <p className="text-sm text-[var(--color-text-muted)]">Enter a URL to your logo image.</p>
             <input value={s.logo||''} onChange={e=>updateS('logo',e.target.value)} className="input" placeholder="https://example.com/logo.png" />
-            {s.logo && <img src={s.logo} alt="Preview" className="h-16 w-auto rounded-lg bg-white/10 p-2" />}
+            {s.logo && <img src={s.logo} alt="Preview" className="h-20 w-auto rounded-lg bg-white/10 p-2" />}
+            <p className="text-xs text-[var(--color-text-muted)]">Tip: Use a service like imgur.com or imgbb.com to upload your logo and paste the direct image URL here</p>
+          </div>
+          <div className="card p-6 space-y-5">
+            <h3 className="font-bold text-lg">Favicon</h3>
+            <p className="text-sm text-[var(--color-text-muted)]">Enter a URL to a square image (ICO, PNG, or SVG, ideally 32x32 or 64x64)</p>
+            <input value={s.faviconUrl||''} onChange={e=>updateS('faviconUrl',e.target.value)} className="input" placeholder="https://example.com/favicon.png" />
+            {s.faviconUrl && <img src={s.faviconUrl} alt="Favicon preview" className="h-8 w-8 rounded bg-white/10 p-0.5" />}
           </div>
           <div className="card p-6 space-y-5">
             <h3 className="font-bold text-lg">Colors</h3>

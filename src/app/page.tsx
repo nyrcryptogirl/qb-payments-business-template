@@ -16,7 +16,8 @@ export default async function HomePage() {
     config = await getAllSettings();
     serviceList = await db.select().from(services).where(eq(services.isActive, true)).orderBy(services.sortOrder);
     testimonialList = await db.select().from(testimonials).where(eq(testimonials.isActive, true));
-  } catch {
+  } catch (error) {
+    console.error('Homepage: Failed to load settings/data from DB:', error);
     config = {
       businessName: 'Your Business Name',
       tagline: 'Professional services you can trust',
@@ -235,7 +236,6 @@ export default async function HomePage() {
               <div className="space-y-3">
                 <a href="#services" className="block text-sm text-[var(--color-text-muted)] hover:text-white transition-colors">Services</a>
                 <Link href="/checkout" className="block text-sm text-[var(--color-text-muted)] hover:text-white transition-colors">Make a Payment</Link>
-                <Link href="/admin" className="block text-sm text-[var(--color-text-muted)] hover:text-white transition-colors">Admin Portal</Link>
               </div>
             </div>
           </div>

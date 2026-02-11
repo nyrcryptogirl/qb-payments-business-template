@@ -9,7 +9,8 @@ export default async function CheckoutPage() {
   let config;
   try {
     config = await getAllSettings();
-  } catch {
+  } catch (error) {
+    console.error('Checkout: Failed to load settings from DB:', error);
     config = {
       businessName: 'Your Business Name',
       tagline: 'Professional services',
