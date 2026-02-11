@@ -241,7 +241,12 @@ export default async function HomePage() {
           </div>
 
           <div className="border-t border-[var(--color-border)] pt-8 text-center text-sm text-[var(--color-text-muted)]">
-            {config.footerText}
+            <p>{config.footerText}</p>
+            <p className="mt-2">
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <span className="mx-2">·</span>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            </p>
           </div>
         </div>
       </footer>
