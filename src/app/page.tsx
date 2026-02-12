@@ -8,16 +8,44 @@ import { ArrowRight, Shield, Zap, CreditCard, Phone, Mail, MapPin, Star, Chevron
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  let config;
+  let config: Record<string, string> | null = null;
   let serviceList: { id: number; name: string; description: string | null; price: string | null; priceType: string | null }[] = [];
   let testimonialList: { id: number; name: string; role: string | null; content: string; rating: number | null }[] = [];
 
+  // Log env var presence for diagnostics
+  const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  console.log('Homepage: DB URL present:', !!dbUrl, 'starts with:', dbUrl?.substring(0, 20));
+
+  // Method 1: Direct DB access (server component)
   try {
     config = await getAllSettings();
     serviceList = await db.select().from(services).where(eq(services.isActive, true)).orderBy(services.sortOrder);
     testimonialList = await db.select().from(testimonials).where(eq(testimonials.isActive, true));
+    console.log('Homepage: Loaded from DB directly. Business name:', config.businessName, 'Services:', serviceList.length);
   } catch (error) {
-    console.error('Homepage: Failed to load settings/data from DB:', error);
+    console.error('Homepage: Direct DB failed, trying API fallback:', error);
+
+    // Method 2: Fetch from our own API (which works for admin)
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+      const res = await fetch(`${baseUrl}/api/settings`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        config = data.settings;
+        serviceList = data.services || [];
+        testimonialList = data.testimonials || [];
+        console.log('Homepage: Loaded from API fallback. Business name:', config?.businessName);
+      } else {
+        throw new Error(`API returned ${res.status}`);
+      }
+    } catch (apiError) {
+      console.error('Homepage: API fallback also failed:', apiError);
+      config = null;
+    }
+  }
+
+  // Final fallback to defaults
+  if (!config || !config.businessName) {
     config = {
       businessName: 'Your Business Name',
       tagline: 'Professional services you can trust',
