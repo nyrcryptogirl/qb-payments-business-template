@@ -5,10 +5,27 @@ import { ArrowLeft } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function TermsPage() {
-  let config;
+  let config: Record<string, string> | null = null;
+
   try {
     config = await getAllSettings();
-  } catch {
+    console.log('Terms: Loaded from DB. Business name:', config.businessName);
+  } catch (error) {
+    console.error('Terms: Direct DB failed, trying API fallback:', error);
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+      const res = await fetch(`${baseUrl}/api/settings`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        config = data.settings;
+      } else { throw new Error(`API returned ${res.status}`); }
+    } catch (apiError) {
+      console.error('Terms: API fallback also failed:', apiError);
+      config = null;
+    }
+  }
+
+  if (!config || !config.businessName) {
     config = {
       businessName: 'Jet Real Estate',
       email: 'hello@yourbusiness.com',

@@ -6,11 +6,34 @@ import CheckoutForm from '@/components/checkout/CheckoutForm';
 export const dynamic = 'force-dynamic';
 
 export default async function CheckoutPage() {
-  let config;
+  let config: Record<string, string> | null = null;
+
+  // Method 1: Direct DB
   try {
     config = await getAllSettings();
+    console.log('Checkout: Loaded from DB. Business name:', config.businessName);
   } catch (error) {
-    console.error('Checkout: Failed to load settings from DB:', error);
+    console.error('Checkout: Direct DB failed, trying API fallback:', error);
+
+    // Method 2: API fallback
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+      const res = await fetch(`${baseUrl}/api/settings`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        config = data.settings;
+        console.log('Checkout: Loaded from API fallback. Business name:', config?.businessName);
+      } else {
+        throw new Error(`API returned ${res.status}`);
+      }
+    } catch (apiError) {
+      console.error('Checkout: API fallback also failed:', apiError);
+      config = null;
+    }
+  }
+
+  // Final fallback
+  if (!config || !config.businessName) {
     config = {
       businessName: 'Your Business Name',
       tagline: 'Professional services',

@@ -1,28 +1,34 @@
-import { neon, NeonQueryFunction } from '@neondatabase/serverless';
-import { drizzle, NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
 
-let _db: NeonHttpDatabase<typeof schema> | null = null;
+type DbInstance = ReturnType<typeof drizzle<typeof schema>>;
 
-function getDb() {
+function createDb(): DbInstance {
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (!connectionString) {
+    console.error('DB ERROR: No DATABASE_URL or POSTGRES_URL environment variable found');
+    throw new Error('No database connection string found. Set DATABASE_URL or POSTGRES_URL.');
+  }
+  console.log('DB: Connecting with', connectionString.substring(0, 25) + '...');
+  const sql = neon(connectionString);
+  return drizzle(sql, { schema });
+}
+
+let _db: DbInstance | undefined;
+
+export function getDb(): DbInstance {
   if (!_db) {
-    const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-    if (!connectionString) {
-      throw new Error('No database connection string found. Set DATABASE_URL or POSTGRES_URL.');
-    }
-    const sql: NeonQueryFunction<false, false> = neon(connectionString);
-    _db = drizzle(sql, { schema });
+    _db = createDb();
   }
   return _db;
 }
 
-export const db = new Proxy({} as NeonHttpDatabase<typeof schema>, {
-  get(_target, prop, receiver) {
+// Lazy proxy so db is not created at import time (build-safe)
+export const db = new Proxy({} as DbInstance, {
+  get(_, prop) {
     const realDb = getDb();
-    const value = Reflect.get(realDb, prop, receiver);
-    if (typeof value === 'function') {
-      return value.bind(realDb);
-    }
-    return value;
+    const val = (realDb as unknown as Record<string | symbol, unknown>)[prop];
+    return typeof val === 'function' ? (val as Function).bind(realDb) : val;
   },
 });
