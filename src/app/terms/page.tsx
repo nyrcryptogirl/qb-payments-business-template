@@ -1,45 +1,48 @@
-import { getAllSettings } from '@/lib/db/settings';
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export default function TermsPage() {
+  const [config, setConfig] = useState<Record<string, string> | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function TermsPage() {
-  let config: Record<string, string> | null = null;
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        setConfig(data.settings || {});
+      })
+      .catch(err => {
+        console.error('TermsPage: Failed to load settings:', err);
+        setConfig({
+          businessName: 'Your Business Name',
+          email: 'hello@yourbusiness.com',
+          phone: '(555) 000-0000',
+          address: '123 Main Street, City, ST 00000',
+          primaryColor: '#FF3366',
+          accentColor: '#00D4FF',
+        });
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-  try {
-    config = await getAllSettings();
-    console.log('Terms: Loaded from DB. Business name:', config.businessName);
-  } catch (error) {
-    console.error('Terms: Direct DB failed, trying API fallback:', error);
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
-      const res = await fetch(`${baseUrl}/api/settings`, { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        config = data.settings;
-      } else { throw new Error(`API returned ${res.status}`); }
-    } catch (apiError) {
-      console.error('Terms: API fallback also failed:', apiError);
-      config = null;
-    }
+  if (loading || !config) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 size={32} className="animate-spin mx-auto mb-4 text-[var(--color-text-muted)]" />
+          <p className="text-sm text-[var(--color-text-muted)]">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (!config || !config.businessName) {
-    config = {
-      businessName: 'Jet Real Estate',
-      email: 'hello@yourbusiness.com',
-      phone: '(555) 000-0000',
-      address: '123 Main Street, City, ST 00000',
-      primaryColor: '#FF3366',
-      accentColor: '#00D4FF',
-    };
-  }
-
-  const biz = config.businessName || 'Jet Real Estate';
+  const biz = config.businessName || 'Your Business Name';
 
   return (
-    <div className="min-h-screen" style={{ '--color-primary': config.primaryColor, '--color-accent': config.accentColor } as React.CSSProperties}>
+    <div className="min-h-screen" style={{ '--color-primary': config.primaryColor || '#FF3366', '--color-accent': config.accentColor || '#00D4FF' } as React.CSSProperties}>
       <nav className="border-b border-[var(--color-border)] backdrop-blur-xl bg-[var(--color-bg)]/80">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <Link href="/" className="flex items-center gap-3 text-[var(--color-text-muted)] hover:text-white transition-colors">

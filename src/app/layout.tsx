@@ -2,18 +2,21 @@ import './globals.css';
 import { getAllSettings } from '@/lib/db/settings';
 
 export async function generateMetadata() {
-  let faviconUrl = '/favicon.svg';
   try {
     const settings = await getAllSettings();
-    if (settings.faviconUrl) faviconUrl = settings.faviconUrl;
+    return {
+      title: `${settings.businessName || 'Business Services'} | Secure Online Payments`,
+      description: settings.tagline || 'Professional business services with secure online payments.',
+      icons: { icon: settings.faviconUrl || '/favicon.svg' },
+    };
   } catch (error) {
-    console.error('Layout: Failed to load favicon setting:', error);
+    console.error('Layout: Failed to load settings for metadata:', error);
+    return {
+      title: 'Business Services | Secure Online Payments',
+      description: 'Professional business services with secure online payments.',
+      icons: { icon: '/favicon.svg' },
+    };
   }
-  return {
-    title: 'Business Services | Secure Online Payments',
-    description: 'Professional business services with secure online payments powered by QuickBooks.',
-    icons: { icon: faviconUrl },
-  };
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
