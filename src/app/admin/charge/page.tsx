@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Zap, Loader2, Check, AlertCircle, CreditCard, Building2 } from 'lucide-react';
+import ReCaptcha from '@/components/ReCaptcha';
 
 export default function ChargePage() {
   const [name, setName] = useState('');
@@ -21,10 +22,30 @@ export default function ChargePage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   async function handleCharge(e: React.FormEvent) {
     e.preventDefault(); setLoading(true); setError(''); setSuccess(false);
     try {
+      if (!captchaToken) {
+        setError('Please complete the reCAPTCHA verification');
+        setLoading(false);
+        return;
+      }
+
+      const captchaRes = await fetch('/api/verify-recaptcha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: captchaToken }),
+      });
+      const captchaData = await captchaRes.json();
+      if (!captchaData.success) {
+        setError('reCAPTCHA verification failed. Please try again.');
+        setCaptchaToken(null);
+        setLoading(false);
+        return;
+      }
+
       let body;
       if (paymentMethod === 'card') {
         const digits = cardNumber.replace(/\s/g, '');
@@ -48,6 +69,7 @@ export default function ChargePage() {
     setSuccess(false); setName(''); setEmail(''); setPhone(''); setAmount(''); setDescription('');
     setCardNumber(''); setCardExpiry(''); setCardCvc('');
     setRoutingNumber(''); setAccountNumber(''); setAccountType('PERSONAL_CHECKING'); setAccountHolderName('');
+    setCaptchaToken(null);
   }
 
   const fmtCard = (v: string) => v.replace(/\D/g, '').slice(0,16).replace(/(\d{4})(?=\d)/g, '$1 ');
@@ -118,7 +140,10 @@ export default function ChargePage() {
           )}
         </div>
         {error && <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--color-error)]/10"><AlertCircle size={18} className="text-[var(--color-error)]" /><p className="text-sm text-[var(--color-error)]">{error}</p></div>}
-        <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
+        <div className="flex justify-center p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+          <ReCaptcha onVerify={(token) => setCaptchaToken(token)} onExpire={() => setCaptchaToken(null)} />
+        </div>
+        <button type="submit" disabled={loading || !captchaToken} className="btn-primary w-full flex items-center justify-center gap-2">
           {loading ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} />}
           {loading ? 'Processing...' : 'Charge Customer'}
         </button>

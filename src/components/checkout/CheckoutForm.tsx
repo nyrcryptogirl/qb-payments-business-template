@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { CreditCard, Building2, Smartphone, Check, Loader2, AlertCircle } from 'lucide-react';
+import ReCaptcha from '@/components/ReCaptcha';
 
 type PaymentMethod = 'card' | 'ach' | 'applepay' | 'googlepay';
 
@@ -17,6 +18,7 @@ export default function CheckoutForm({ enableCards, enableACH, enableApplePay, e
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   // Customer info
   const [name, setName] = useState('');
@@ -53,6 +55,25 @@ export default function CheckoutForm({ enableCards, enableACH, enableApplePay, e
     setError('');
 
     try {
+      if (!captchaToken) {
+        setError('Please complete the reCAPTCHA verification');
+        setLoading(false);
+        return;
+      }
+
+      const captchaRes = await fetch('/api/verify-recaptcha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: captchaToken }),
+      });
+      const captchaData = await captchaRes.json();
+      if (!captchaData.success) {
+        setError('reCAPTCHA verification failed. Please try again.');
+        setCaptchaToken(null);
+        setLoading(false);
+        return;
+      }
+
       const payload: Record<string, unknown> = {
         name,
         email,
@@ -284,10 +305,15 @@ export default function CheckoutForm({ enableCards, enableACH, enableApplePay, e
         </div>
       )}
 
+      {/* reCAPTCHA */}
+      <div className="flex justify-center p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+        <ReCaptcha onVerify={(token) => setCaptchaToken(token)} onExpire={() => setCaptchaToken(null)} />
+      </div>
+
       {/* Submit */}
       <button
         type="submit"
-        disabled={loading || !amount || parseFloat(amount) < 1}
+        disabled={loading || !amount || parseFloat(amount) < 1 || !captchaToken}
         className="btn-primary w-full !py-4 !text-lg flex items-center justify-center gap-3"
       >
         {loading ? (
