@@ -232,6 +232,19 @@ export async function qbPaymentsRequest(
 // ==================
 
 export async function createCustomer(data: { name: string; email?: string; phone?: string }) {
+  // First try to find existing customer by display name
+  try {
+    const query = `SELECT * FROM Customer WHERE DisplayName = '${data.name.replace(/'/g, "\\'")}'`;
+    const searchResult = await qbAccountingRequest('GET', `query?query=${encodeURIComponent(query)}`);
+    if (searchResult?.QueryResponse?.Customer?.length > 0) {
+      console.log('Found existing QB customer:', searchResult.QueryResponse.Customer[0].Id);
+      return { Customer: searchResult.QueryResponse.Customer[0] };
+    }
+  } catch (e) {
+    console.log('Customer search failed, will try create:', e instanceof Error ? e.message : e);
+  }
+
+  // Create new customer
   return qbAccountingRequest('POST', 'customer', {
     DisplayName: data.name,
     PrimaryEmailAddr: data.email ? { Address: data.email } : undefined,
@@ -334,6 +347,16 @@ export async function chargeCard(tokenOrCardId: string, amount: number, currency
       mobile: 'false',
       isEcommerce: 'true',
     },
+  });
+}
+
+// Charge eCheck with token (for ACH payments via tokenized bank account)
+export async function chargeECheckWithToken(token: string, amount: number, description?: string) {
+  return qbPaymentsRequest('POST', 'echecks', {
+    token,
+    paymentMode: 'WEB',
+    amount: amount.toFixed(2),
+    description,
   });
 }
 
