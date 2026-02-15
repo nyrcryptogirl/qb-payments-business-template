@@ -21,6 +21,7 @@ export default function ChargePage() {
   const [accountHolderName, setAccountHolderName] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
@@ -60,13 +61,18 @@ export default function ChargePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      if (data.status === 'processing') {
+        setSuccessMessage(data.message || 'Payment is being processed.');
+      } else {
+        setSuccessMessage(data.message || 'Payment processed successfully!');
+      }
       setSuccess(true);
     } catch (err) { setError(err instanceof Error ? err.message : 'Charge failed'); }
     finally { setLoading(false); }
   }
 
   function resetForm() {
-    setSuccess(false); setName(''); setEmail(''); setPhone(''); setAmount(''); setDescription('');
+    setSuccess(false); setSuccessMessage(''); setName(''); setEmail(''); setPhone(''); setAmount(''); setDescription('');
     setCardNumber(''); setCardExpiry(''); setCardCvc('');
     setRoutingNumber(''); setAccountNumber(''); setAccountType('PERSONAL_CHECKING'); setAccountHolderName('');
     setCaptchaToken(null);
@@ -81,7 +87,7 @@ export default function ChargePage() {
         <div className="mb-8"><h1 className="text-3xl font-black tracking-tight">Charge Customer</h1></div>
         <div className="card p-10 text-center max-w-lg mx-auto">
           <div className="w-16 h-16 rounded-full bg-[var(--color-success)]/20 flex items-center justify-center mx-auto mb-6"><Check size={32} className="text-[var(--color-success)]" /></div>
-          <h2 className="text-2xl font-bold mb-2">Payment Processed!</h2>
+          <h2 className="text-2xl font-bold mb-2">{successMessage || 'Payment Processed!'}</h2>
           <p className="text-[var(--color-text-muted)]">${parseFloat(amount).toFixed(2)} charged to {name}</p>
           <div className="flex items-center justify-center gap-4 mt-6">
             <button onClick={resetForm} className="btn-primary">Charge Another</button>

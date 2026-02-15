@@ -17,6 +17,7 @@ export default function CheckoutForm({ enableCards, enableACH, enableApplePay, e
   const [method, setMethod] = useState<PaymentMethod>(enableCards ? 'card' : enableACH ? 'ach' : 'applepay');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
@@ -116,6 +117,12 @@ export default function CheckoutForm({ enableCards, enableACH, enableApplePay, e
         throw new Error(data.error || 'Payment failed');
       }
 
+      // Show appropriate message based on status
+      if (data.status === 'processing') {
+        setSuccessMessage(data.message || 'Payment is being processed.');
+      } else {
+        setSuccessMessage(data.message || 'Payment successful!');
+      }
       setSuccess(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
@@ -130,9 +137,9 @@ export default function CheckoutForm({ enableCards, enableACH, enableApplePay, e
         <div className="w-16 h-16 rounded-full bg-[var(--color-success)]/20 flex items-center justify-center mx-auto mb-6">
           <Check size={32} className="text-[var(--color-success)]" />
         </div>
-        <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
+        <h2 className="text-2xl font-bold mb-2">{successMessage || 'Payment Successful!'}</h2>
         <p className="text-[var(--color-text-muted)] mb-6">
-          Thank you, {name}. Your payment of ${parseFloat(amount).toFixed(2)} has been processed.
+          Thank you, {name}. Your payment of ${parseFloat(amount).toFixed(2)} has been submitted.
         </p>
         <p className="text-sm text-[var(--color-text-muted)]">
           A confirmation will be sent to {email}.

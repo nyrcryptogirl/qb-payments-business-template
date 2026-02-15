@@ -124,7 +124,7 @@ export default function DashboardClient() {
                   <td className="font-semibold">${parseFloat(txn.amount).toFixed(2)}</td>
                   <td className="capitalize">{txn.paymentMethod || '—'}</td>
                   <td>
-                    <span className={`badge ${txn.status === 'completed' ? 'badge-success' : txn.status === 'failed' ? 'badge-error' : 'badge-warning'}`}>
+                    <span className={`badge ${txn.status === 'completed' ? 'badge-success' : txn.status === 'failed' || txn.status === 'declined' ? 'badge-error' : txn.status === 'processing' ? 'badge-info' : 'badge-warning'}`}>
                       {txn.status}
                     </span>
                   </td>

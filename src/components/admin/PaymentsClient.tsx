@@ -63,7 +63,7 @@ export default function PaymentsClient() {
                   <td className="font-semibold">${parseFloat(t.amount).toFixed(2)}</td>
                   <td className="capitalize">{t.paymentMethod || '—'}</td>
                   <td>
-                    <span className={`badge ${t.status === 'completed' ? 'badge-success' : t.status === 'failed' ? 'badge-error' : 'badge-warning'}`}>
+                    <span className={`badge ${t.status === 'completed' ? 'badge-success' : t.status === 'failed' || t.status === 'declined' ? 'badge-error' : t.status === 'processing' ? 'badge-info' : 'badge-warning'}`}>
                       {t.status}
                     </span>
                   </td>
