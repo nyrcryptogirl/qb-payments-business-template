@@ -7,7 +7,7 @@ const QB_AUTH_URL = 'https://appcenter.intuit.com/connect/oauth2';
 const QB_TOKEN_URL = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
 
 // Get QB config from DB settings first, then fall back to env vars
-async function getQBConfig() {
+export async function getQBConfig() {
   try {
     const settings = await getAllSettings();
     return {
@@ -153,8 +153,12 @@ export async function getAccessToken(): Promise<{ token: string; realmId: string
 
 // Check if connected to QuickBooks
 export async function isConnected(): Promise<boolean> {
-  const token = await getAccessToken();
-  return token !== null;
+  try {
+    const auth = await getAccessToken();
+    return !!auth;
+  } catch {
+    return false;
+  }
 }
 
 // Generic QB Accounting API call
@@ -325,9 +329,10 @@ export async function chargeCard(tokenOrCardId: string, amount: number, currency
     currency,
     token: tokenOrCardId,
     description,
+    capture: true,
     context: {
-      mobile: false,
-      isEcommerce: true,
+      mobile: 'false',
+      isEcommerce: 'true',
     },
   });
 }
