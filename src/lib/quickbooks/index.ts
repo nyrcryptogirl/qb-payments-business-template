@@ -321,7 +321,7 @@ export async function tokenizeBankAccount(bank: {
   name: string;
   routingNumber: string;
   accountNumber: string;
-  accountType: 'PERSONAL_CHECKING' | 'PERSONAL_SAVINGS' | 'BUSINESS_CHECKING' | 'BUSINESS_SAVINGS';
+  accountType: string;
   phone: string;
 }) {
   return qbPaymentsRequest('POST', 'tokens', {
@@ -330,7 +330,7 @@ export async function tokenizeBankAccount(bank: {
       routingNumber: bank.routingNumber,
       accountNumber: bank.accountNumber,
       accountType: bank.accountType,
-      phone: bank.phone,
+      phone: bank.phone.replace(/\D/g, ''),  // Strip to digits only
     },
   });
 }

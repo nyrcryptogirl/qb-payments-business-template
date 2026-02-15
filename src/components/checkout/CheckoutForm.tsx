@@ -100,8 +100,8 @@ export default function CheckoutForm({ enableCards, enableACH, enableApplePay, e
           name,
           routingNumber,
           accountNumber,
-          accountType,
-          phone: phone.replace(/\D/g, ''),
+          accountType: accountType || 'PERSONAL_CHECKING',
+          phone: phone.replace(/\D/g, '') || '0000000000',
         };
       }
 

@@ -36,6 +36,10 @@ export async function POST(req: Request) {
         chargeResult = await chargeCard(tokenResult.value, amount, 'USD', description);
 
       } else if (paymentMethod === 'ach' && bankAccount) {
+        // Ensure phone is included for QB requirement
+        if (!bankAccount.phone) {
+          bankAccount.phone = phone || '0000000000';
+        }
         console.log('Tokenizing bank account...');
         const tokenResult = await tokenizeBankAccount(bankAccount);
         console.log('Token result:', JSON.stringify(tokenResult));
