@@ -29,7 +29,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Protect admin API routes
-  if (pathname.startsWith('/api/admin/')) {
+  if (pathname.startsWith('/api/admin/') || pathname.startsWith('/api/debug')) {
     const session = request.cookies.get('session');
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -40,5 +40,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/settings', '/api/quickbooks/disconnect', '/api/admin/:path*'],
+  matcher: ['/admin/:path*', '/api/settings', '/api/quickbooks/disconnect', '/api/admin/:path*', '/api/debug-payment', '/api/debug'],
 };
