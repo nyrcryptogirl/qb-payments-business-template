@@ -246,7 +246,8 @@ export async function createInvoice(customerId: string, items: { description: st
     Description: item.description,
     LineNum: i + 1,
     SalesItemLineDetail: {
-      ItemRef: { value: '1', name: 'Services' },
+      UnitPrice: item.amount,
+      Qty: 1,
     },
   }));
 
@@ -256,9 +257,10 @@ export async function createInvoice(customerId: string, items: { description: st
   });
 }
 
-export async function recordPayment(invoiceId: string, amount: number) {
+export async function recordPayment(invoiceId: string, amount: number, customerId: string) {
   return qbAccountingRequest('POST', 'payment', {
     TotalAmt: amount,
+    CustomerRef: { value: customerId },
     Line: [{
       Amount: amount,
       LinkedTxn: [{ TxnId: invoiceId, TxnType: 'Invoice' }],

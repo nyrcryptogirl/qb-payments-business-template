@@ -83,7 +83,10 @@ export default function ChargePage() {
           <div className="w-16 h-16 rounded-full bg-[var(--color-success)]/20 flex items-center justify-center mx-auto mb-6"><Check size={32} className="text-[var(--color-success)]" /></div>
           <h2 className="text-2xl font-bold mb-2">Payment Processed!</h2>
           <p className="text-[var(--color-text-muted)]">${parseFloat(amount).toFixed(2)} charged to {name}</p>
-          <button onClick={resetForm} className="btn-primary mt-6">Charge Another</button>
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <button onClick={resetForm} className="btn-primary">Charge Another</button>
+            <a href="/admin/payments" className="text-sm text-[var(--color-primary)] font-semibold hover:underline">View Payments →</a>
+          </div>
         </div>
       </div>
     );
