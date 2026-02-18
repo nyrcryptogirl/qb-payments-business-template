@@ -53,7 +53,7 @@ export default function ChargePage() {
         const parts = cardExpiry.split('/');
         body = { name, email, phone, amount: parseFloat(amount), description, paymentMethod: 'card', card: { number: digits, expMonth: parts[0], expYear: '20' + parts[1], cvc: cardCvc, name } };
       } else {
-        body = { name, email, phone, amount: parseFloat(amount), description, paymentMethod: 'ach', bankAccount: { name: accountHolderName || name, routingNumber, accountNumber, accountType, phone } };
+        body = { name, email, phone, amount: parseFloat(amount), description, paymentMethod: 'ach', bankAccount: { name: accountHolderName || name, routingNumber, accountNumber, accountType: accountType || 'PERSONAL_CHECKING', phone: phone.replace(/\D/g, '') || '0000000000' } };
       }
       const res = await fetch('/api/quickbooks/charge', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
