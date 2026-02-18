@@ -40,6 +40,16 @@ export async function POST(req: Request) {
         if (!bankAccount.phone) {
           bankAccount.phone = phone || '0000000000';
         }
+        // QB forces paymentMode CCD for business account types, which gets declined
+        // for standard online payments. For WEB (online) payments, we map business
+        // types to personal equivalents. The actual bank account routing/account
+        // numbers still work correctly — this only changes the SEC code QB uses.
+        const originalType = bankAccount.accountType;
+        const webCompatibleType = bankAccount.accountType?.includes('SAVINGS')
+          ? 'PERSONAL_SAVINGS'
+          : 'PERSONAL_CHECKING';
+        bankAccount.accountType = webCompatibleType;
+        console.log('Account type mapped:', originalType, '->', webCompatibleType);
         console.log('Tokenizing bank account...');
         const tokenResult = await tokenizeBankAccount(bankAccount);
         console.log('Token result:', JSON.stringify(tokenResult));
